@@ -2,6 +2,7 @@ use crate::config::Config;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::error::Error;
+use std::fmt;
 
 const BASE_URL: &str = "http://api.aladhan.com";
 type Timings = HashMap<chrono::NaiveDate, AthanSlice>;
@@ -33,6 +34,24 @@ pub struct AthanSlice {
     imsak: String,
     #[serde(rename = "Midnight")]
     midnight: String,
+}
+
+impl fmt::Display for AthanSlice {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Fajr: {}\nSunrise: {}\nDhuhr: {}\nAsr: {}\nSunset: {}\nMaghrib: {}\nIsha: {}\nImsak: {}\nMidnight: {}",
+            self.fajr,
+            self.sunrise,
+            self.dhuhr,
+            self.asr,
+            self.sunset,
+            self.maghrib,
+            self.isha,
+            self.imsak,
+            self.midnight
+        )
+    }
 }
 
 impl RawAthan {
@@ -69,5 +88,25 @@ impl Athan {
             mapping.insert(date, timings);
         }
         Ok(Self { timings: mapping })
+    }
+
+    pub fn get(&self, date: &chrono::NaiveDate) -> Result<&AthanSlice, &str> {
+        self.timings.get(date).ok_or("Given date does not exist.")
+    }
+
+    pub fn today(&self) -> Result<&AthanSlice, &str> {
+        self.timings
+            .get(&chrono::Utc::today().naive_utc())
+            .ok_or("Given date does not exist.")
+    }
+
+    pub fn tomorrow(&self) -> Result<&AthanSlice, &str> {
+        self.timings
+            .get(&chrono::Utc::today().naive_utc().succ())
+            .ok_or("Given date does not exist.")
+    }
+
+    pub fn next_n(&self, start: &chrono::NaiveDate, n: u8) -> AthanSlice {
+        todo!();
     }
 }
